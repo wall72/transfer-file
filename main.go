@@ -43,7 +43,7 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
-	mux.Handle("/", withReadOnly(*readOnly, handler))
+	mux.Handle("/", withDirListing(absDir, withReadOnly(*readOnly, handler)))
 
 	addr := fmt.Sprintf(":%d", *port)
 	log.Printf("%q 디렉터리를 WebDAV 루트로 공유합니다", absDir)
@@ -58,6 +58,27 @@ func main() {
 	if err := http.ListenAndServe(addr, mux); err != nil {
 		log.Fatalf("서버 오류: %v", err)
 	}
+}
+
+// withDirListing은 GET/HEAD 요청 대상이 디렉터리일 경우
+// WebDAV 핸들러(405 반환) 대신 HTML 디렉터리 목록을 보여준다.
+// 파일 요청은 그대로 다음 핸들러(webdav.Handler)로 넘긴다.
+func withDirListing(absDir string, next http.Handler) http.Handler {
+	dir := http.Dir(absDir)
+	fileServer := http.FileServer(dir)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet || r.Method == http.MethodHead {
+			if f, err := dir.Open(r.URL.Path); err == nil {
+				fi, statErr := f.Stat()
+				f.Close()
+				if statErr == nil && fi.IsDir() {
+					fileServer.ServeHTTP(w, r)
+					return
+				}
+			}
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 // withReadOnly는 readOnly가 true일 때 WebDAV 쓰기 메서드를 거부한다.
