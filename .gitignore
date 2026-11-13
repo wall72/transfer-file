@@ -1,0 +1,4 @@
+transfer-file
+*.exe
+*.test
+/shared/
