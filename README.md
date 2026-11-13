@@ -1,39 +1,39 @@
 # transfer-file
 
-A minimal WebDAV server for ad-hoc PC-to-PC file transfer over a LAN.
-No authentication, no TLS — intended only for trusted local networks
-(e.g. moving files between two computers on the same Wi-Fi/Ethernet segment).
+LAN에서 PC 간 파일을 간단히 주고받기 위한 최소 기능의 WebDAV 서버입니다.
+인증과 TLS가 없으므로, 신뢰할 수 있는 로컬 네트워크
+(예: 같은 Wi-Fi/이더넷에 연결된 두 PC 사이)에서만 사용하세요.
 
-## Build
+## 빌드
 
 ```powershell
 go build -o transfer-file.exe .
 ```
 
-## Run
+## 실행
 
 ```powershell
 ./transfer-file.exe -dir ./shared -port 8081
 ```
 
-On startup the server prints the LAN URL(s) to use from another machine,
-e.g. `http://192.168.1.23:8081/`.
+서버를 시작하면 다른 PC에서 접속할 때 사용할 LAN 주소가 출력됩니다.
+예: `http://192.168.1.23:8081/`
 
-### Flags
+### 옵션
 
-| Flag        | Default    | Description                                   |
-|-------------|------------|------------------------------------------------|
-| `-dir`      | `./shared` | Directory to expose over WebDAV                |
-| `-port`     | `8081`     | TCP port to listen on                           |
-| `-readonly` | `false`    | Reject write methods (PUT/DELETE/MKCOL/...)     |
+| 옵션         | 기본값      | 설명                                             |
+|-------------|------------|--------------------------------------------------|
+| `-dir`      | `./shared` | WebDAV로 공유할 디렉터리                            |
+| `-port`     | `8081`     | 서버가 대기할 TCP 포트                              |
+| `-readonly` | `false`    | 쓰기 메서드 차단 (PUT/DELETE/MKCOL 등)               |
 
-## Connecting from another PC
+## 다른 PC에서 접속하기
 
-- **Windows**: File Explorer → "Map network drive" → "Connect to a website" → enter `http://<ip>:8081/`.
-- **macOS**: Finder → Go → "Connect to Server" → `http://<ip>:8081/`.
-- **Linux**: `davfs2` or a file manager with WebDAV support, pointed at `http://<ip>:8081/`.
+- **Windows**: 파일 탐색기 → "네트워크 드라이브 연결" → "웹 사이트에 연결" → `http://<ip>:8081/` 입력
+- **macOS**: Finder → 이동 → "서버에 연결" → `http://<ip>:8081/` 입력
+- **Linux**: `davfs2` 또는 WebDAV를 지원하는 파일 관리자에서 `http://<ip>:8081/`로 접속
 
-## Security
+## 보안 주의사항
 
-There is no authentication or encryption. Only run this on a network you
-trust, and stop the server when you're done transferring files.
+인증과 암호화 기능이 없습니다. 반드시 신뢰할 수 있는 네트워크에서만
+실행하고, 파일 전송이 끝나면 서버를 종료하세요.

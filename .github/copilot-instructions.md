@@ -1,46 +1,48 @@
-# Copilot instructions for transfer-file
+# transfer-file을 위한 Copilot 지침
 
-## What this is
+## 언어 정책
 
-A single-binary WebDAV server (Go, `golang.org/x/net/webdav`) for ad-hoc
-PC-to-PC file transfer on a trusted LAN. No auth, no TLS — by design, not
-an oversight. All logic lives in `main.go`; there is no package layout to
-navigate.
+- 이 저장소의 모든 문서(README 등)와 코드 주석은 **한글**로 작성한다.
+- Copilot CLI 세션 응답도 **한글**로 작성한다.
 
-## Build & run
+## 프로젝트 개요
+
+LAN에서 PC 간 파일을 임시로 주고받기 위한 단일 바이너리 WebDAV 서버
+(Go, `golang.org/x/net/webdav`)입니다. 인증과 TLS가 없는 것은 설계
+의도이며, 실수가 아닙니다. 모든 로직은 `main.go` 한 파일에 있으며
+별도의 패키지 구조는 없습니다.
+
+## 빌드 및 실행
 
 ```powershell
 go build -o transfer-file.exe .
 ./transfer-file.exe -dir ./shared -port 8081 [-readonly]
 ```
 
-- `go vet ./...` — static checks (no test suite exists yet; add `_test.go`
-  files and use `go test ./... -run TestName` for a single test if tests
-  are introduced).
-- `go fmt ./...` before committing.
-- Requires Go 1.21+ (uses `golang.org/x/net/webdav`, pulled via `go.mod`).
+- `go vet ./...` — 정적 분석 (아직 테스트는 없음. 테스트를 추가하면
+  `go test ./... -run TestName`으로 개별 테스트 실행 가능)
+- 커밋 전 `go fmt ./...` 실행
+- Go 1.21+ 필요 (`golang.org/x/net/webdav`는 `go.mod`로 관리)
 
-## Architecture
+## 아키텍처
 
-- `main()` wires three pieces: the `webdav.Handler` (serves `-dir` as the
-  DAV root via `webdav.Dir`), an optional read-only wrapper
-  (`withReadOnly`), and startup diagnostics (`lanURLs`) that print every
-  non-loopback IPv4 address so the user knows what URL to type on the
-  *other* PC.
-- `withReadOnly` is a `http.Handler` middleware that blocks the WebDAV
-  write verbs (`PUT`, `DELETE`, `MKCOL`, `COPY`, `MOVE`, `PROPPATCH`)
-  before delegating to the real handler — it does not touch the
-  filesystem layer.
-- The shared directory is created with `os.MkdirAll` if missing and
-  resolved to an absolute path before being handed to `webdav.Dir`.
+- `main()`은 세 부분을 연결한다: `-dir`을 DAV 루트로 서비스하는
+  `webdav.Handler`(`webdav.Dir` 사용), 선택적 읽기 전용 래퍼
+  (`withReadOnly`), 그리고 다른 PC에서 접속할 주소를 알려주기 위해
+  루프백이 아닌 모든 IPv4 주소를 출력하는 시작 로그(`lanURLs`).
+- `withReadOnly`는 WebDAV 쓰기 메서드(`PUT`, `DELETE`, `MKCOL`,
+  `COPY`, `MOVE`, `PROPPATCH`)를 실제 핸들러로 넘기기 전에 차단하는
+  `http.Handler` 미들웨어이며, 파일 시스템 계층은 건드리지 않는다.
+- 공유 디렉터리는 없으면 `os.MkdirAll`로 생성하고, `webdav.Dir`에
+  넘기기 전에 절대 경로로 변환한다.
 
-## Conventions
+## 코딩 컨벤션
 
-- Keep it to a single `main.go` unless a feature genuinely needs its own
-  file — this project intentionally avoids internal packages.
-- Flags only (`-dir`, `-port`, `-readonly`); don't add a config file
-  format unless requested.
-- Any new write-restricting behavior must be added to the
-  `writeMethods` set in `withReadOnly`, not as a separate handler.
-- `./shared/` (the default data dir) and built binaries are gitignored —
-  never commit transferred files or `transfer-file.exe`.
+- 꼭 필요한 경우가 아니면 `main.go` 한 파일로 유지한다 — 이 프로젝트는
+  의도적으로 내부 패키지 분리를 피한다.
+- 플래그만 사용한다(`-dir`, `-port`, `-readonly`); 요청이 없는 한
+  별도의 설정 파일 형식을 추가하지 않는다.
+- 쓰기를 제한하는 새로운 동작은 별도 핸들러가 아니라
+  `withReadOnly`의 `writeMethods` 집합에 추가한다.
+- 기본 데이터 디렉터리 `./shared/`와 빌드된 바이너리는 gitignore
+  대상이다 — 전송된 파일이나 `transfer-file.exe`를 커밋하지 않는다.
