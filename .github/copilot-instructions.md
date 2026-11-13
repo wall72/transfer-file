@@ -26,10 +26,17 @@ go build -o transfer-file.exe .
 
 ## 아키텍처
 
-- `main()`은 세 부분을 연결한다: `-dir`을 DAV 루트로 서비스하는
-  `webdav.Handler`(`webdav.Dir` 사용), 선택적 읽기 전용 래퍼
+- `main()`은 네 부분을 연결한다: `-dir`을 DAV 루트로 서비스하는
+  `webdav.Handler`(`webdav.Dir` 사용), 디렉터리 요청을 가로채
+  목록/업로드 폼을 보여주는 `withDirListing`, 선택적 읽기 전용 래퍼
   (`withReadOnly`), 그리고 다른 PC에서 접속할 주소를 알려주기 위해
   루프백이 아닌 모든 IPv4 주소를 출력하는 시작 로그(`lanURLs`).
+- `withDirListing`은 GET/HEAD 요청 대상이 디렉터리면(webdav가 405를
+  반환하는 경우) `renderDirListing`으로 자체 HTML 목록 + 업로드 폼을
+  그리고, 파일이면 그대로 webdav 핸들러로 위임한다.
+- `/upload`는 별도 라우트(`uploadHandler`)로, multipart 폼을 받아
+  `safeJoin`으로 경로 탈출을 막은 뒤 `saveUploadedFile`로 저장하고
+  업로드 전 폴더로 303 리다이렉트한다. `-readonly`일 때는 항상 거부.
 - `withReadOnly`는 WebDAV 쓰기 메서드(`PUT`, `DELETE`, `MKCOL`,
   `COPY`, `MOVE`, `PROPPATCH`)를 실제 핸들러로 넘기기 전에 차단하는
   `http.Handler` 미들웨어이며, 파일 시스템 계층은 건드리지 않는다.
@@ -43,6 +50,9 @@ go build -o transfer-file.exe .
 - 플래그만 사용한다(`-dir`, `-port`, `-readonly`); 요청이 없는 한
   별도의 설정 파일 형식을 추가하지 않는다.
 - 쓰기를 제한하는 새로운 동작은 별도 핸들러가 아니라
-  `withReadOnly`의 `writeMethods` 집합에 추가한다.
+  `withReadOnly`의 `writeMethods` 집합(및 `uploadHandler`의
+  `readOnly` 체크)에 추가한다.
+- 사용자가 지정한 상대 경로(업로드 대상 폴더 등)를 파일 시스템 경로와
+  결합할 때는 반드시 `safeJoin`을 거쳐 경로 탈출을 막는다.
 - 기본 데이터 디렉터리 `./shared/`와 빌드된 바이너리는 gitignore
   대상이다 — 전송된 파일이나 `transfer-file.exe`를 커밋하지 않는다.
