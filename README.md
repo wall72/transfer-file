@@ -7,13 +7,25 @@ LAN에서 PC 간 파일을 간단히 주고받기 위한 최소 기능의 WebDAV
 ## 빌드
 
 ```powershell
+# Windows
 go build -o transfer-file.exe .
+```
+
+```bash
+# Linux/macOS
+go build -o transfer-file .
 ```
 
 ## 실행
 
 ```powershell
+# Windows
 ./transfer-file.exe -dir ./shared -port 8081
+```
+
+```bash
+# Linux/macOS
+./transfer-file -dir ./shared -port 8081
 ```
 
 서버를 시작하면 다른 PC에서 접속할 때 사용할 LAN 주소가 출력됩니다.
